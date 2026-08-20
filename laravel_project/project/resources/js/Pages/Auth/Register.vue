@@ -124,26 +124,26 @@ onMounted(() => {
                 <div class="row g-3">
                     <div class="col-6">
                         <label class="d-block cursor-pointer" @click="form.role = 'buyer'">
-                            <div class="role-card p-4 rounded-2 text-center border border-dashed" :class="form.role === 'buyer' ? 'border-primary bg-light-primary' : 'border-secondary bg-transparent'">
+                            <div class="role-card p-4 rounded-2 text-center" :class="{ selected: form.role === 'buyer' }">
                                 <div class="symbol symbol-40px mx-auto mb-3">
-                                    <div class="symbol-label rounded-circle role-icon-wrap" :class="form.role === 'buyer' ? 'bg-primary' : 'bg-secondary'">
-                                        <i class="bi bi-person-fill fs-4" :class="form.role === 'buyer' ? 'text-white' : 'text-muted'"></i>
+                                    <div class="symbol-label rounded-circle role-icon-wrap">
+                                        <i class="bi bi-person-fill fs-4"></i>
                                     </div>
                                 </div>
-                                <div class="fw-bold role-label" :class="form.role === 'buyer' ? 'text-primary' : 'text-muted'">Alıcı</div>
+                                <div class="fw-bold role-label">Alıcı</div>
                                 <div class="text-muted fs-8 mt-1">Teklif ver, satın al</div>
                             </div>
                         </label>
                     </div>
                     <div class="col-6">
                         <label class="d-block cursor-pointer" @click="form.role = 'seller'">
-                            <div class="role-card p-4 rounded-2 text-center border border-dashed" :class="form.role === 'seller' ? 'border-primary bg-light-primary' : 'border-secondary bg-transparent'">
+                            <div class="role-card p-4 rounded-2 text-center" :class="{ selected: form.role === 'seller' }">
                                 <div class="symbol symbol-40px mx-auto mb-3">
-                                    <div class="symbol-label rounded-circle role-icon-wrap" :class="form.role === 'seller' ? 'bg-primary' : 'bg-secondary'">
-                                        <i class="bi bi-shop fs-4" :class="form.role === 'seller' ? 'text-white' : 'text-muted'"></i>
+                                    <div class="symbol-label rounded-circle role-icon-wrap">
+                                        <i class="bi bi-shop fs-4"></i>
                                     </div>
                                 </div>
-                                <div class="fw-bold role-label" :class="form.role === 'seller' ? 'text-primary' : 'text-muted'">Satıcı</div>
+                                <div class="fw-bold role-label">Satıcı</div>
                                 <div class="text-muted fs-8 mt-1">İlan ver, sat</div>
                             </div>
                         </label>

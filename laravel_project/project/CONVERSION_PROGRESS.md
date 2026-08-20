@@ -168,3 +168,10 @@ Aşama 1'deki 3 bilinen bug düzeltildi ve testing agent ile e2e doğrulandı (%
 
 **Bilgi notu (bug değil):** header live-search sadece kullanıcı döndürüyor (placeholder ilan/müzayede de vaat ediyor). İleride opsiyonel iyileştirme.
 
+## 🩹 UI Düzeltmeleri Turu 2 (kullanıcı geri bildirimi) — TAMAM (testing agent %100)
+- **Çift scroll (tüm sayfalar):** `auth.css`'teki global `body{overflow:hidden}` ve `#kt_app_root{height:100vh}` kuralları sadece `body.auth-page`'e scope'landı (AuthLayout onMounted/onUnmounted ile body class'ı ekliyor/kaldırıyor).
+- **Scrollbar rengi:** belirgin mavi (`var(--primary)`) yerine soft/şeffafa yakın gri (`rgba(128,128,128,0.22)`, track transparent, 6px) — theme-new.css + Firefox `scrollbar-color`.
+- **Auth mobil scroll:** mobilde `#kt_app_root` artık `height:auto; min-height:100dvh` (100vh mobil adres-çubuğu taşması giderildi) → login mobilde scroll çıkmıyor.
+- **Register rol seçimi:** radio input kaldırıldığı için çalışmayan `.role-radio:checked` stili yerine `.role-card.selected` eklendi; seçim artık belirgin (mavi border/arka plan/ikon/yazı).
+- **Mobil sidebar:** Inertia gezinmesinde (`router.on('start')`) KT drawer otomatik kapanıyor (`window.KTDrawer.getInstance('#kt_app_sidebar').hide()`).
+

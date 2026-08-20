@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, onMounted, nextTick } from 'vue';
+import { computed, ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { Link, usePage, router } from '@inertiajs/vue3';
 
 const page = usePage();
@@ -113,10 +113,27 @@ function markNotifsRead() {
 }
 const hasUnread = computed(() => !notifCleared.value && (user.value?.unread_notifications || 0) > 0);
 
+/* ---- Mobilde Inertia gezinmesinde sidebar drawer'ını kapat ---- */
+function closeMobileSidebar() {
+    const el = document.getElementById('kt_app_sidebar');
+    if (!el) return;
+    try {
+        const inst = window.KTDrawer && window.KTDrawer.getInstance(el);
+        if (inst) inst.hide();
+    } catch (e) { /* noop */ }
+}
+let removeNavListener = null;
+
 onMounted(() => {
     applyTheme(localStorage.getItem('theme') || 'dark');
     document.addEventListener('click', onClickOutside);
+    removeNavListener = router.on('start', () => closeMobileSidebar());
     nextTick(() => window.initKT && window.initKT());
+});
+
+onUnmounted(() => {
+    document.removeEventListener('click', onClickOutside);
+    if (removeNavListener) removeNavListener();
 });
 </script>
 

@@ -1,7 +1,12 @@
 <script setup>
+import { onMounted, onUnmounted } from 'vue';
+
 defineProps({
     activeAuctions: { type: Number, default: 0 },
 });
+
+onMounted(() => document.body.classList.add('auth-page'));
+onUnmounted(() => document.body.classList.remove('auth-page'));
 </script>
 
 <template>

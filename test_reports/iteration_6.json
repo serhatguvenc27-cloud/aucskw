@@ -1,0 +1,25 @@
+{
+  "summary": "Frontend-only verification of 3 follow-up fixes on artirdim.com preview. (1) Subtle scrollbar: PASS - computed html scrollbar-color is 'rgba(128,128,128,0.22) rgba(0,0,0,0)' (transparent track), webkit rules from theme-new.css are width 6px, track transparent, thumb rgba(128,128,128,0.22), hover 0.4; zero remaining scrollbar rules referencing var(--primary)/blue. (2) Auth pages mobile no-scroll: PASS - /login at 390x844 -> scrollHeight 844 == innerHeight 844, scrollY stays 0 after scroll attempt; at 360x640 -> documentElement scrollHeight 640 == innerHeight, scrollY 0 (body/#kt_app_root inner content measures 662px but nothing is scrollable or visibly clipped in screenshot). /register at 390x844 -> scrollHeight 844, scrollY 0, form reachable/not clipped. Scrollbar color on auth pages is the new subtle grey. (3) Mobile sidebar auto-close: PASS x2 - logged in as buyer@test.com at 390x844, hamburger #kt_app_sidebar_mobile_toggle opened drawer (class drawer-on + .drawer-overlay present, body overflow hidden); clicking 'Muzayedeler' (/browse/auctions) and data-testid=sidebar-buyer-orders (/orders) both navigated AND drawer auto-closed (drawer-on removed, overlay removed, body overflow restored to 'hidden auto').",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/login (mobile 390x844)", "issues": ["Minor cosmetic: the tagline text under the 'artirdim.com' logo appears faded/overlapping the underline decoration, looking like a rendering artifact (see logo block). Not a functional issue."]},
+      {"screen": "/login (360x640)", "issues": ["Inner #kt_app_root content height computes 662px vs 640px viewport while the document is not scrollable; no clipping observed in screenshot, but worth a quick visual check on very short devices."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "AppLayout.vue router.on('start') listener correctly cleaned up in onUnmounted - good. Consider also hiding the drawer on 'finish' as a safety net if a navigation is cancelled."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100% (3/3 fixes verified)"},
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "buyer@test.com / password (from /app/memory/test_credentials.md) - login works",
+  "context_for_next_testing_agent": "All 3 items from this round (subtle scrollbar, auth mobile no-scroll, mobile sidebar auto-close on Inertia nav) verified passing at 1920x1080, 390x844 and 360x640. Only remaining observations are cosmetic (login logo tagline artifact) and /storage/auctions/*.jpg 403 image errors (known/ignored).",
+  "rca_of_the_issue": "N/A - fixes confirmed effective. Previous root causes (height:100vh on mobile auth root, blue primary scrollbar thumb, missing drawer hide on Inertia navigation) are all resolved in the live preview assets."
+}
