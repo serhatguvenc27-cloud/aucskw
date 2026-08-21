@@ -1,3 +1,17 @@
+/* Inertia dinamik yükleme köprüsü: DOM zaten hazırsa DOMContentLoaded
+   callback'lerini kuyruğa al, dosya sonunda çalıştır (native davranış blade'de korunur). */
+(function () {
+    if (document.readyState === 'loading') return; // blade: normal akış
+    window.__asQueue = [];
+    window.__asQueuedInit = true;
+    window.__asOrigAdd = document.addEventListener.bind(document);
+    document.addEventListener = function (type, cb, opts) {
+        if (type === 'DOMContentLoaded') { window.__asQueue.push(cb); return; }
+        return window.__asOrigAdd(type, cb, opts);
+    };
+})();
+
+
 /* ─── Satıldı / Geri Sayım ─── */
 let _cdInterval = null;
 
@@ -573,3 +587,23 @@ document.addEventListener('DOMContentLoaded', () => {
     pollInterval = setInterval(pollLiveState, 2500);
     chatInterval = setInterval(pollChat, 3000);
 });
+
+/* Inertia köprüsü: init'i tekrar çağrılabilir yap + tam temizlik kancası */
+(function () {
+    var q = window.__asQueue || [];
+    if (window.__asOrigAdd) {
+        document.addEventListener = window.__asOrigAdd;
+        window.__asOrigAdd = null;
+    }
+    window.__auctionShowCleanup = function () {
+        try { clearInterval(pollInterval); } catch (e) {}
+        try { clearInterval(chatInterval); } catch (e) {}
+        try { clearInterval(_cdInterval); } catch (e) {}
+        try { clearInterval(timerInt); } catch (e) {}
+    };
+    window.__auctionShowInit = function () {
+        try { window.__auctionShowCleanup(); } catch (e) {}
+        q.forEach(function (cb) { try { cb(); } catch (e) {} });
+    };
+    if (window.__asQueuedInit) { window.__auctionShowInit(); }
+})();

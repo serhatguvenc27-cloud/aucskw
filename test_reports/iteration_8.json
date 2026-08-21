@@ -1,0 +1,43 @@
+{
+  "summary": "Frontend-only retest of the Inertia/Vue auction detail page (Auctions/Show.vue) on the preview URL for the two reported bugs plus realtime regression. BUG 1 (Pusher error on bid) is FIXED: logged in as buyer@test.com, opened active auction /auctions/el-yapimi-porselen-at-figurlu-vazo-Xq8l (owner user_id=4, not the buyer), quick-bid filled the input (8190), POST .../bid returned HTTP 200, #live-price 8.100->8.190 ₺, #live-bid-count 11->12, new bid appeared at TOP of #bid-feed ('test alıcı (sen) az önce 8.190 ₺'), #bid-error stayed hidden. A second higher bid (8280) also returned 200 (price 8.280 ₺, count 13, 13 feed items). Zero console errors, zero page errors, no 'Pusher'/Reverb mention anywhere. BUG 2 (FOUC) is FIXED: head contains <link ... /assets/css/auction-show.css>, it is present in document.styleSheets on first paint and .price-hero computed background is rgb(21,94,239) with .au-card rgba(255,255,255,0.04) immediately after load - no unstyled flash observed. REGRESSION: first-load realtime is fine (timer 4926:20->4926:17, 3 live-state polls / 7s, viewer count '1', lightbox opens and closes), BUT the SPA re-entry defect reported in iteration_7 is STILL PRESENT and unfixed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /auctions/{slug}/bid", "issue": "Now returns 200 with BROADCAST_CONNECTION=log, but broadcast(new BidPlaced($bid))->toOthers() in BidController@store is still unguarded (line 48) and runs after the bid is committed. If the connection is ever switched back to reverb/pusher without a running server, the same 500-after-commit bug returns. Recommend try/catch or queueing the broadcast."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Auctions/Show.vue + public/assets/js/custom/auction-show.js", "issue": "STILL BROKEN (carried over from iteration_7): SPA re-entry kills realtime. Repro: open the detail page -> click sidebar 'Ana Sayfa' (Inertia Link) -> browser Back. Console: PAGEERROR \"Identifier '_cdInterval' has already been declared\"; measured after return: 0 /live-state requests in 7s (vs 3 on first load), #viewer-count / İZLEYİCİ stuck at '—'. The countdown only LOOKS alive (4926:03 -> 4925:56) because the first mount's timerInt interval is never cleared by __auctionShowCleanup - it will show the wrong auction's remaining time when SPA-navigating between two auctions. Root cause: classic script with top-level let/const re-injected on every onMounted.", "selector": "#live-timer, #viewer-count", "priority": "CRITICAL"},
+      {"component": "Bid submit button", "issue": "Duplicated lightning icon after a submit attempt: button renders '⚡ ⚡ Teklif Ver' (_doSubmit sets #bid-btn-text.innerHTML to an icon + text while the template already has a sibling <i>). Still unfixed.", "selector": "[data-testid='bid-submit-btn'] #bid-btn-text", "priority": "LOW"}
+    ],
+    "integration_issues": [
+      {"flow": "Realtime polling after Inertia back-navigation", "issue": "No /auctions/{slug}/live-state or /chat polls are issued at all after SPA return, so price/feed/viewer count are frozen.", "affected_selectors": ["#viewer-count", "#live-price", "#bid-feed"]}
+    ],
+    "design_issues": [
+      {"screen": "Auction detail - stats row", "issues": ["Countdown still formatted mm:ss only -> multi-day auctions render as '4926:20' (~82 hours). Use d/h/m formatting."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix the SPA re-entry crash: wrap public/assets/js/custom/auction-show.js in an IIFE exposing window.__auctionShowInit/__auctionShowCleanup and call init() on remount instead of re-injecting the <script>; the top-level let/const redeclaration aborts the whole file at parse time on the 2nd mount.",
+    "Add clearInterval(timerInt) to window.__auctionShowCleanup so the countdown interval does not leak across Inertia navigations.",
+    "Guard broadcast(new BidPlaced($bid)) in BidController@store with try/catch (defensive - currently OK only because BROADCAST_CONNECTION=log).",
+    "Dead code: resources/js/bootstrap.js is NOT imported by resources/js/app.js (built bundle app-B5tOsEh1.js contains no Echo/Pusher/'Reverb anahtarı' string). So the expected console.info '[Echo] Reverb anahtarı tanımlı değil...' never appears - Echo simply never loads. Either import bootstrap.js in app.js or delete it to avoid confusion.",
+    "Fix duplicated lightning icon in #bid-btn-text after submit.",
+    "Format the countdown as d/h/m instead of mm:ss."
+  ],
+  "critical_code_review_comments": [
+    "auction-show.js re-injection strategy is fundamentally incompatible with its top-level let/const declarations; every Inertia remount throws a SyntaxError and silently disables polling/chat init.",
+    "bootstrap.js (axios + Echo setup) is orphaned - window.axios is also never set globally; verify nothing else in the app relies on window.axios.",
+    "Show.vue still uses inline HTML onclick strings with interpolated image URLs (:onclick=\"`switchImg(this,'${img.url}')`\") - a quote in a URL breaks/injects JS."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "BUG1 PASS, BUG2 PASS, regression: 4/5 (first-load timer, polling, viewer count, lightbox pass; SPA re-entry FAILS)"},
+  "seed_data_creation": "Two real bids placed as buyer@test.com on auction id=2 (el-yapimi-porselen-at-figurlu-vazo-Xq8l): 8190 and 8280; current_price is now 8280.00.",
+  "should_call_test_agent_after_fix": true,
+  "should_main_agent_self_test": false,
+  "test_credentials": "buyer@test.com / password (login form inputs are not type=email; use form input nth(0)/nth(1))",
+  "context_for_next_testing_agent": "Bidding + FOUC are verified fixed on https://laravel-workspace.preview.emergentagent.com/auctions/el-yapimi-porselen-at-figurlu-vazo-Xq8l (auction id=2, owner user_id=4, so buyer@test.com can bid). Only remaining detail-page defect is the SPA re-entry crash in public/assets/js/custom/auction-show.js ('_cdInterval already declared') -> 0 live-state polls, viewer count '—'; reproduce via sidebar 'Ana Sayfa' Inertia Link then page.go_back(). Auction card links in /browse/auctions are plain <a> (full reload) so they will not reproduce it. Ignore /storage/auctions/*.jpg 403s.",
+  "rca_of_the_issue": "BUG1 root cause (BROADCAST_CONNECTION=reverb with no Reverb server) is resolved by BROADCAST_CONNECTION=log; frontend Echo never initializes because bootstrap.js isn't even bundled, so no Pusher client exists. BUG2 resolved by moving auction-show.css into the <head> of app.blade.php (confirmed via document.styleSheets and computed styles on first paint). The remaining SPA regression is caused by re-injecting a classic script whose top-level lexical bindings already exist, aborting the file at parse time, plus timerInt not being cleared in __auctionShowCleanup which masks the failure."
+}

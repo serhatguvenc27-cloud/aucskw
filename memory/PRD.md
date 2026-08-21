@@ -43,3 +43,8 @@ Ortam yeniden kuruldu (PHP 8.2, Composer, MariaDB, Redis; supervisor `laravel`/`
 - 1C Register.vue adım-bazlı client validation (server kurallarıyla birebir)
 Sıradaki: GRUP 3 (İlan detay / canlı teklif / profil) — kullanıcı onayı bekleniyor.
 
+## GRUP 3 başladı (2026-08)
+- **İlan Detay TAMAM** (`Auctions/Show.vue`, `BidController@show`→Inertia). Canlı JS (teklif/polling/sohbet/geri sayım/lightbox) `auction-show.js` aynen korundu; Inertia köprüsü + tek-yükleme + cleanup eklendi. FOUC (auction-show.css→head) ve teklifteki Pusher hatası (broadcast→log, Echo kapalı) düzeltildi. Testing agent %100 (iteration_9).
+- KALAN: satıcı canlı yayın (WebRTC), profil show/edit, takip listesi.
+- **Ortam kalıcılık notu:** Pod yeniden başlarsa Laravel/DB sıfırlanır. Yeniden kurulum: DB'yi başlat, `.env` hazır, `composer install`, `php artisan migrate --seed` + `AuctionSeeder`, `yarn build`, supervisor `laravel`/`mariadb`/`redis` (conf: /etc/supervisor/conf.d/laravel.conf).
+

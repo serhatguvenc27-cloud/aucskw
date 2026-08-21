@@ -62,7 +62,107 @@ class BidController extends Controller
         $auction->increment('view_count');
         $auction->load(['images', 'cover', 'bids.user', 'category', 'user']);
 
-        return view('auctionsnew', compact('auction'));
+        $seller = $auction->user;
+        $me = auth()->id();
+        $inc = (float) $auction->min_bid_increment;
+        $minBid = (float) $auction->current_price + $inc;
+        $fmt = fn ($n) => number_format((float) $n, 0, ',', '.') . ' ₺';
+
+        $statusMap = [
+            'draft' => ['Bekliyor', 'warning'], 'active' => ['Aktif', 'success'],
+            'rejected' => ['Reddedildi', 'danger'], 'ended' => ['Bitti', 'danger'],
+            'sold' => ['Satıldı', 'seller'], 'cancelled' => ['İptal', 'warning'],
+        ];
+        [$statusLabel, $statusType] = $statusMap[$auction->status] ?? ['—', 'info'];
+
+        $ratingVal = $seller->sellerRating();
+        $r = round($ratingVal * 2) / 2;
+        $stars = [];
+        for ($i = 1; $i <= 5; $i++) {
+            $stars[] = $r >= $i ? 'full' : ($r >= $i - 0.5 ? 'half' : 'empty');
+        }
+
+        $data = [
+            'id' => $auction->id,
+            'slug' => $auction->slug,
+            'title' => $auction->title,
+            'title_70' => \Illuminate\Support\Str::limit($auction->title, 70),
+            'title_30' => \Illuminate\Support\Str::limit($auction->title, 30),
+            'status' => $auction->status,
+            'status_label' => $statusLabel,
+            'status_type' => $statusType,
+            'is_active' => $auction->isActive(),
+            'has_finished' => $auction->hasFinished(),
+            'is_live' => (bool) $auction->is_live,
+            'location' => $auction->location,
+            'category_name' => $auction->category?->name,
+            'cover_url' => $auction->cover?->url() ?? asset('assets/media/placeholder.svg'),
+            'images' => $auction->images->map(fn ($img) => ['url' => $img->url(), 'is_cover' => (bool) $img->is_cover])->values(),
+            'description' => $auction->description,
+            'condition_label' => match ($auction->condition) { 'new' => 'Sıfır', 'used' => 'İkinci El', 'refurbished' => 'Yenilenmiş', default => '—' },
+            'min_increment_fmt' => $fmt($inc),
+            'starting_price_fmt' => $fmt($auction->starting_price),
+            'starts_at_fmt' => $auction->starts_at->format('d.m.Y H:i'),
+            'ends_at_fmt' => $auction->ends_at->format('d.m.Y H:i'),
+            'view_count_fmt' => number_format($auction->view_count) . ' kez',
+            'display_price' => $auction->displayPrice(),
+            'bid_count' => $auction->bidCount(),
+            'buy_now_price_fmt' => $auction->buy_now_price ? $fmt($auction->buy_now_price) : null,
+            'uses_promo_video' => $auction->usesPromoVideo(),
+            'is_direct_video' => $auction->isDirectVideoFile(),
+            'promo_video_url' => $auction->promo_video_url,
+            'embed_video_url' => $auction->embedVideoUrl(),
+            'min_bid' => $minBid,
+            'min_bid_fmt' => $fmt($minBid),
+            'quick' => [
+                ['inc_fmt' => $fmt($inc), 'val' => $minBid, 'val_fmt' => $fmt($minBid)],
+                ['inc_fmt' => $fmt($inc * 5), 'val' => $minBid + $inc * 4, 'val_fmt' => $fmt($minBid + $inc * 4)],
+                ['inc_fmt' => $fmt($inc * 10), 'val' => $minBid + $inc * 9, 'val_fmt' => $fmt($minBid + $inc * 9)],
+            ],
+            'seller' => [
+                'id' => $seller->id,
+                'name' => $seller->name,
+                'username' => $seller->username,
+                'profile_img' => $seller->profile_img,
+                'rating_fmt' => number_format($ratingVal, 1),
+                'review_count' => $seller->sellerReviewCount(),
+                'stars' => $stars,
+                'profile_url' => route('profile.public', $seller->username),
+            ],
+            'bids' => $auction->bids->take(15)->values()->map(fn ($bid, $index) => [
+                'name' => $bid->user->name,
+                'amount_fmt' => number_format($bid->amount, 0, ',', '.') . ' ₺',
+                'time' => $bid->created_at->diffForHumans(),
+                'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($bid->user->name) . '&size=32&background=155eef&color=fff',
+                'is_top' => $index === 0,
+                'rank' => $index + 1,
+                'rank_class' => $index === 0 ? 'r1' : ($index === 1 ? 'r2' : ($index === 2 ? 'r3' : 'rn')),
+            ]),
+            'is_owner' => $me === $auction->user_id,
+        ];
+
+        $config = [
+            'auction_id' => (int) $auction->id,
+            'min_increment' => (int) $auction->min_bid_increment,
+            'bid_url' => route('bids.store', $auction),
+            'csrf' => csrf_token(),
+            'seller_id' => (int) $auction->user_id,
+            'remaining_secs' => (int) max(0, $auction->ends_at->diffInSeconds(now(), false) * -1),
+            'live_state_url' => route('auctions.live-state', $auction),
+            'chat_poll_url' => route('auctions.chat.poll', $auction),
+            'chat_store_url' => route('auctions.chat.store', $auction),
+            'is_finished' => $auction->hasFinished() ? '1' : '0',
+            'uses_video' => $auction->usesPromoVideo() ? '1' : '0',
+            'last_bid_id' => (int) ($auction->bids->max('id') ?? 0),
+            'sold_handled' => in_array($auction->status, ['sold', 'ended']) ? '1' : '0',
+            'is_auth' => auth()->check() ? '1' : '0',
+            'current_user_id' => auth()->check() ? (int) auth()->id() : '',
+            'current_min' => (int) ($auction->current_price + $auction->min_bid_increment),
+            'messages_start_url' => route('messages.start'),
+            'login_url' => route('login'),
+        ];
+
+        return \Inertia\Inertia::render('Auctions/Show', ['a' => $data, 'config' => $config]);
     }
 
     /**

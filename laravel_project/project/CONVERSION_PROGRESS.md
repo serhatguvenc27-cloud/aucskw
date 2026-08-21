@@ -69,6 +69,8 @@
 | Onay Bekliyor | `auth/pending-approval` | (verified.account middleware) | — | [ ] | [ ] | [ ] | [ ] |
 
 ## 🟧 GRUP 3 — İlan Detay & Profil (5)
+> **İlan Detay: TAMAM ✅** (`Auctions/Show.vue`) — `BidController@show` → `Inertia::render('Auctions/Show')`, tam serialize props (`a`+`config`). Canlı davranış (teklif, polling live-state, sohbet, geri sayım, lightbox, satıcı kartı) mevcut `auction-show.js`/`auctions-new-config.js` AYNEN korunarak sağlandı; JS'e Inertia köprüsü eklendi (`__auctionShowInit`/`__auctionShowCleanup`, script tek sefer yüklenir, remount'ta init tekrar çağrılır → SPA yeniden-giriş çökmesi çözüldü). `auction-show.css` global head'e alındı (FOUC giderildi). Broadcast `log` driver'a çekildi + frontend Echo devre dışı (Reverb yok) → teklifte Pusher hatası giderildi. Testing agent %100 (iteration_9).
+> **KALAN:** Canlı Yayın (satıcı/WebRTC), Profil (show/edit), Takip Listesi.
 | Sayfa | Blade | Controller | Route | Vue | Ctrl→Inertia | Route ✓ | Test ✓ |
 |---|---|---|---|---|---|---|---|
 | İlan Detay | `auctionsnew` | `BidController@show` | `auctions.show` | [ ] | [ ] | [ ] | [ ] |

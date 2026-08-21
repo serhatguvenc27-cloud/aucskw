@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend-only retest of the auction detail page (Auctions/Show.vue + public/assets/js/custom/auction-show.js) on the preview URL as buyer@test.com. CRITICAL SPA re-entry bug is FIXED. Verified: (1) Detail page /auctions/el-yapimi-porselen-at-figurlu-vazo-Xq8l first load: countdown decrements (4919:36->4919:29), 3 /live-state polls in 7s, #viewer-count = '1'. (2) Two round trips via sidebar 'Ana Sayfa' Inertia Link + browser Back: ZERO pageerrors, ZERO console errors (only ignorable /storage/*.jpg 403s), NO \"Identifier '_cdInterval' has already been declared\" or any SyntaxError. After each return polling resumed with exactly 3 live-state polls per 7s (i.e. one 2.5s interval, no duplicated/leaked intervals), viewer count showed '1' (not '—'), and timer kept decrementing. (3) Per-auction timer correctness: auction A showed 4919:36 while auction B (bordo-altin-detayli-porselen-vazo-QY3W) showed 9239:07; after a Home->Back round trip on B the timer stayed in the B range (9238:58->9238:51), so no stale timer from the previous auction. (4) Bidding regression PASS: quick-bid '+90 ₺' filled 8370, click on [data-testid=bid-submit-btn] -> POST .../bid HTTP 200, #live-price 8.280->8.370 ₺, #live-bid-count 13->14, new bid 'test alıcı (sen) az önce 8.370 ₺' at top of #bid-feed, #bid-error hidden, no Pusher/Reverb error, no 500. (5) FOUC regression PASS: <link ...auction-show.css> present in <head>, .price-hero computed background rgb(21,94,239) immediately on load. (6) Lightbox PASS: main gallery image click opens #lightbox, click closes it. Validation path also verified: submitting below-minimum shows '#bid-error: En az 8.370 ₺ girmelisiniz.'",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Bid submit button", "issue": "Known/accepted (inherited from Blade, explicitly out of scope): after a submit the button renders duplicated lightning icon '⚡ ⚡ Teklif Ver'.", "selector": "[data-testid='bid-submit-btn'] #bid-btn-text", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Auction detail - stats row", "issues": ["Known/accepted: countdown formatted mm:ss so multi-day auctions render as '4918:00' / '9239:07'."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "window.__auctionShowInit relies on window.__asQueue captured by the top shim, which only populates when document.readyState !== 'loading'. It works today because Show.vue injects the script in onMounted (readyState 'complete'), but if the script is ever added to the Blade <head>/body with defer during initial parse, __asQueue stays empty and remount init becomes a no-op. Consider registering init callbacks explicitly instead of intercepting document.addEventListener.",
+    "Show.vue still uses inline onclick strings with interpolated image URLs (:onclick=\"`switchImg(this,'${img.url}')`\") - a quote in a URL breaks/injects JS (pre-existing).",
+    "BidController@store broadcast(new BidPlaced($bid)) is still unguarded; only safe because BROADCAST_CONNECTION=log (pre-existing, not retested)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (frontend-only request)", "frontend": "100% - 4/4 requested scenarios pass (SPA re-entry, bidding, FOUC, lightbox)"},
+  "seed_data_creation": "One real bid placed as buyer@test.com on auction id=2 (el-yapimi-porselen-at-figurlu-vazo-Xq8l): 8370; current_price now 8370.00, bid count 14.",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "test_credentials": "buyer@test.com / password (login form inputs are not type=email; use form input:not([type=checkbox]) nth(0)/nth(1) and get_by_role('button', name='Giriş Yap'))",
+  "context_for_next_testing_agent": "iteration_9: SPA re-entry crash is fixed and verified twice; live-state polling resumes (3 polls/7s), no interval leak, per-auction timers correct. Quick-bid selector is '#quick-btns .quick-btn'; bid input is [data-testid=bid-amount-input]; submit is [data-testid=bid-submit-btn]. Auction card links in listings are plain <a> (full reload), so SPA A->B detail nav can only be simulated via Home link + browser back. Ignore /storage/auctions/*.jpg 403 console errors. Remaining known-LOW items (duplicate ⚡ icon, mm:ss countdown) are intentionally unchanged.",
+  "rca_of_the_issue": "Previous crash was caused by re-injecting a classic script with top-level let/const on every Inertia remount. The fix (inject once, expose window.__auctionShowInit/__auctionShowCleanup, clear timerInt in cleanup) resolves it: verified no SyntaxError on remount, exactly one polling interval after return, and correct per-auction countdown."
+}
