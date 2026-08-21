@@ -1,0 +1,22 @@
+{
+  "summary": "Frontend-only verification of the sticky-footer fix (#kt_app_root.app-root { min-height:100vh }) and no-double-scrollbar regression on artirdim.com preview. Logged in as buyer@test.com and measured footer geometry + scroll containers on short pages (/u/seller/following, /notifications, /favorites, /dashboard), the long homepage '/', plus /login and /register at desktop 1920x1080, 1280x720 and mobile 390x844. All 4 requested checks PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Note (informational, no action needed now): because Metronic's style.bundle.css/theme-new.css set 'html, body { height:100% }' and body (#kt_app_body) has overflow-y:auto, the actual scroll container on long pages is the BODY element, not the window. Consequence: window.scrollY stays 0 and window.scrollTo()/document.documentElement.scrollTop have no effect. A grep of resources/js found no code using window.scroll*/scrollTop, so nothing is broken today, but any future scroll-to-top button, sticky-on-scroll header, or window-based infinite scroll must use document.body.scrollTop / listen on document.body. Also note automated tests must scroll via mouse wheel over content or body.scrollTop."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "not tested (skipped per request)", "frontend": "100% (4/4 scenarios pass)"},
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "test_credentials": "buyer@test.com / password (from /app/memory/test_credentials.md)",
+  "context_for_next_testing_agent": "Measurements taken: SHORT pages at 1920x1080 -> #kt_app_footer.getBoundingClientRect().bottom = 1080 == window.innerHeight, gap below footer = 0px, document/body scrollHeight = 1080 (no scroll), zero nested scroll containers. Same result at mobile 390x844 (footer bottom 844 == innerHeight) and 1280x720. Verified both on direct page load AND on Inertia SPA navigation coming from a scrolled long page (scroll resets to 0, footer sticks to bottom). LONG page '/': body.scrollHeight 2703 vs clientHeight 1080, footer initially at top=2643 (below the fold, not fixed/overlapping); after wheel scroll body.scrollTop=1623 and footer bottom lands exactly at 1080 -> normal scroll, single scrollbar (only BODY#kt_app_body is a scroller; html scrollHeight == clientHeight). Auth pages: /login and /register render correctly with no app footer; desktop body overflow-y:hidden (intentional auth-page rule) and mobile 390x844 documentElement.scrollHeight == innerHeight == 844 so no spurious mobile scroll. IMPORTANT for future scripts: window.scrollTo/window.scrollY do NOT work on this app (body is the scroll container) - use page.mouse.move into the content area then page.mouse.wheel, or document.body.scrollTop.",
+  "rca_of_the_issue": "Previously the double-scrollbar fix removed '#kt_app_root { height:100vh }', which also removed the height anchor of the Metronic flex chain, so on short pages the footer floated mid-screen. The new rule '#kt_app_root.app-root { min-height:100vh }' restores the anchor while allowing growth; verified computed min-height = viewport height on every page tested, footer pinned at viewport bottom on short pages and no second scroll container reintroduced."
+}

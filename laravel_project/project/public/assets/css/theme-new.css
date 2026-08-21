@@ -449,6 +449,10 @@ html.theme-switching *::after {
 }
 
 html { scrollbar-width: thin; scrollbar-color: rgba(128,128,128,0.22) transparent; }
+
+/* Sticky footer: kök en az ekran boyu kadar; flex zinciri footer'ı dibe iter.
+   min-height (sabit height değil) → gövde tek scroll, çift scrollbar oluşmaz. */
+#kt_app_root.app-root { min-height: 100vh; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: rgba(128,128,128,0.22); border-radius: 10px; }

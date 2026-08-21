@@ -45,6 +45,7 @@ Sıradaki: GRUP 3 (İlan detay / canlı teklif / profil) — kullanıcı onayı 
 
 ## GRUP 3 başladı (2026-08)
 - **İlan Detay TAMAM** (`Auctions/Show.vue`, `BidController@show`→Inertia). Canlı JS (teklif/polling/sohbet/geri sayım/lightbox) `auction-show.js` aynen korundu; Inertia köprüsü + tek-yükleme + cleanup eklendi. FOUC (auction-show.css→head) ve teklifteki Pusher hatası (broadcast→log, Echo kapalı) düzeltildi. Testing agent %100 (iteration_9).
-- KALAN: satıcı canlı yayın (WebRTC), profil show/edit, takip listesi.
+- KALAN: satıcı canlı yayın (WebRTC).
+- Profil sayfaları (show/edit + follow-list) TAMAM (Inertia/Vue). profile-show.js `__profileShowInit`'e sarıldı (SPA-güvenli). Sticky footer düzeltildi (`#kt_app_root{min-height:100vh}`). Testing agent %100 (iteration_10/11/12).
 - **Ortam kalıcılık notu:** Pod yeniden başlarsa Laravel/DB sıfırlanır. Yeniden kurulum: DB'yi başlat, `.env` hazır, `composer install`, `php artisan migrate --seed` + `AuctionSeeder`, `yarn build`, supervisor `laravel`/`mariadb`/`redis` (conf: /etc/supervisor/conf.d/laravel.conf).
 

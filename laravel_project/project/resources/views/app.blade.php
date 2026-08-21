@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="{{ asset('assets/css/auth.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/story-upload.css') }}" />
     <link rel="stylesheet" href="{{ asset('assets/css/auction-show.css') }}" />
+    <link rel="stylesheet" href="{{ asset('assets/css/profile-show.css') }}" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
 
     @routes

@@ -70,7 +70,11 @@
 
 ## 🟧 GRUP 3 — İlan Detay & Profil (5)
 > **İlan Detay: TAMAM ✅** (`Auctions/Show.vue`) — `BidController@show` → `Inertia::render('Auctions/Show')`, tam serialize props (`a`+`config`). Canlı davranış (teklif, polling live-state, sohbet, geri sayım, lightbox, satıcı kartı) mevcut `auction-show.js`/`auctions-new-config.js` AYNEN korunarak sağlandı; JS'e Inertia köprüsü eklendi (`__auctionShowInit`/`__auctionShowCleanup`, script tek sefer yüklenir, remount'ta init tekrar çağrılır → SPA yeniden-giriş çökmesi çözüldü). `auction-show.css` global head'e alındı (FOUC giderildi). Broadcast `log` driver'a çekildi + frontend Echo devre dışı (Reverb yok) → teklifte Pusher hatası giderildi. Testing agent %100 (iteration_9).
-> **KALAN:** Canlı Yayın (satıcı/WebRTC), Profil (show/edit), Takip Listesi.
+> **KALAN:** Canlı Yayın (satıcı/WebRTC).
+>
+> **Profil Sayfaları: TAMAM ✅** (`Profile/Show.vue` — public `show` + owner `edit` tek serializer; `Profile/FollowList.vue` — followers/following). `profile-show.js` SPA-güvenli `__profileShowInit`'e sarıldı; formlar native POST (birebir), flash/validation props ile taşınıyor; Güvenlik sekmesinde e-posta/şifre hata & başarı geri bildirimi için ilgili inline form otomatik açılıyor. Follow toggle FollowList'te native Vue fetch. Testing agent %100 (iteration_10/11).
+>
+> **UI düzeltmesi:** Sticky footer — çift-scroll düzeltmesinde kaldırılan yükseklik çıpası `#kt_app_root { min-height:100vh }` ile geri getirildi; kısa sayfalarda footer artık dibe yapışıyor, çift scrollbar geri gelmiyor. Testing agent %100 (iteration_12).
 | Sayfa | Blade | Controller | Route | Vue | Ctrl→Inertia | Route ✓ | Test ✓ |
 |---|---|---|---|---|---|---|---|
 | İlan Detay | `auctionsnew` | `BidController@show` | `auctions.show` | [ ] | [ ] | [ ] | [ ] |

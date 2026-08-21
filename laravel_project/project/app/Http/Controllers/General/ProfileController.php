@@ -14,19 +14,184 @@ class ProfileController extends Controller
 {
     public function edit()
     {
-        $user =  auth()->user();
+        return $this->renderProfile(auth()->user());
+    }
 
-        $auctions = $user->auctions()->latest()->get();
-
+    private function renderProfile(User $user)
+    {
         $isOwner = auth()->check() && auth()->id() === $user->id;
         $isFollowing = auth()->check() ? auth()->user()->isFollowing($user->id) : false;
         $followerCount = $user->followers()->count();
         $followingCount = $user->followings()->count();
         $activities = $this->buildActivities($user, $isOwner);
 
-        return view('profile.show', compact(
-            'user', 'auctions', 'isOwner', 'isFollowing', 'followerCount', 'followingCount', 'activities'
-        ));
+        $starsOf = function ($rating) {
+            $r = round(((float) $rating) * 2) / 2;
+            $out = [];
+            for ($i = 1; $i <= 5; $i++) {
+                $out[] = $r >= $i ? 'full' : ($r >= $i - 0.5 ? 'half' : 'empty');
+            }
+            return $out;
+        };
+        $fmt = fn ($n) => number_format((float) $n, 0, ',', '.') . ' ₺';
+
+        $roleKey = $user->roles->first()?->name ?? 'user';
+        $roleLabel = match ($roleKey) { 'admin' => '👑 Admin', 'seller' => '🏪 Onaylı Satıcı', default => '🛍️ Üye' };
+
+        \App\Models\Story::pruneExpired();
+        $heroStories = $user->stories()->where('expires_at', '>', now())->orderBy('id')->get();
+
+        $showcase = $user->auctions->map(fn ($a) => [
+            'url' => route('auctions.show', $a),
+            'cover' => $a->coverUrl(),
+            'price_fmt' => number_format($a->current_price ?? $a->starting_price, 0, ',', '.') . ' ₺',
+            'title' => $a->title,
+            'bid_count' => $a->bids()->count(),
+            'view_count' => $a->view_count ?? 0,
+        ])->values();
+
+        $reviews = null;
+        if ($user->isSeller()) {
+            $myReview = auth()->check() ? $user->reviewFrom(auth()->user()) : null;
+            $reviews = [
+                'rating_fmt' => number_format($user->sellerRating(), 1),
+                'stars' => $starsOf($user->sellerRating()),
+                'review_count' => $user->sellerReviewCount(),
+                'can_review' => auth()->check() && ! $isOwner && auth()->user()->hasCompletedOrderFrom($user->id),
+                'locked' => auth()->check() && ! $isOwner && ! auth()->user()->hasCompletedOrderFrom($user->id),
+                'store_url' => route('reviews.store', $user->username),
+                'my_review' => $myReview ? ['rating' => $myReview->rating, 'comment' => $myReview->comment] : null,
+                'items' => $user->reviewsReceived()->with('reviewer')->latest()->take(20)->get()->map(fn ($rev) => [
+                    'avatar' => $rev->reviewer->profile_img,
+                    'name' => $rev->reviewer->name,
+                    'stars' => $starsOf($rev->rating),
+                    'comment' => $rev->comment,
+                    'time' => $rev->created_at->diffForHumans(),
+                ])->values(),
+            ];
+        }
+
+        $errorBag = session('errors');
+        $errorFields = $errorBag ? array_values($errorBag->getBag('default')->keys()) : [];
+        $errorMessages = $errorBag ? $errorBag->getBag('default')->getMessages() : [];
+        $errorFlat = [];
+        foreach ($errorMessages as $k => $msgs) {
+            $errorFlat[$k] = $msgs[0] ?? '';
+        }
+
+        $psDrawerOpen = session('profile_success') || session('email_success') || session('password_success');
+        $psDrawerTab = (session('email_success') || session('password_success')) ? 'guvenlik' : '';
+        $psDrawerInline = session('email_success') ? 'email-form' : (session('password_success') ? 'pass-form' : '');
+
+        $avatarFallback = 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=155eef&color=fff&size=256';
+
+        $pf = [
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'username' => $user->username,
+                'handle' => $user->username ? '@' . $user->username : null,
+                'bio' => $user->bio,
+                'bio_display' => $user->bio ?? 'Koleksiyon parçaları ve güvenli açık artırmanın adresi.',
+                'email' => $user->email,
+                'phone' => $user->phone,
+                'avatar' => $user->profile_img ?? $avatarFallback,
+                'role_label' => $roleLabel,
+                'is_online' => method_exists($user, 'isOnline') && $user->isOnline(),
+            ],
+            'is_owner' => $isOwner,
+            'is_following' => $isFollowing,
+            'follower_count' => $followerCount,
+            'following_count' => $followingCount,
+            'auction_count' => $user->auctions()->count(),
+            'bid_count' => $user->bids()->count(),
+            'is_seller' => $user->isSeller(),
+            'rating_fmt' => $user->isSeller() ? number_format($user->sellerRating(), 1) : '—',
+            'is_creator_seller' => $user->isSeller(),
+            'showcase' => $showcase,
+            'activities' => $activities->map(fn ($act) => [
+                'icon' => $act['icon'],
+                'color' => $act['color'],
+                'title' => $act['title'],
+                'subject' => \Illuminate\Support\Str::limit($act['subject'], 52),
+                'amount_fmt' => $fmt($act['amount']),
+                'date' => $act['date']?->diffForHumans(),
+                'url' => $act['url'],
+            ])->values(),
+            'reviews' => $reviews,
+            'privacy' => [
+                'profile_public' => (bool) $user->profile_public,
+                'bids_hidden' => (bool) $user->bids_hidden,
+                'show_online' => (bool) $user->show_online,
+                'email_notifications' => (bool) $user->email_notifications,
+                'messages_followers_only' => (bool) $user->messages_followers_only,
+            ],
+            'social' => [
+                'instagram' => old('social.instagram', $user->social['instagram'] ?? ''),
+                'twitter' => old('social.twitter', $user->social['twitter'] ?? ''),
+                'youtube' => old('social.youtube', $user->social['youtube'] ?? ''),
+                'linkedin' => old('social.linkedin', $user->social['linkedin'] ?? ''),
+            ],
+            'form' => [
+                'name' => old('name', $user->name),
+                'username' => old('username', $user->username),
+                'phone' => old('phone', $user->phone),
+                'bio' => old('bio', $user->bio),
+                'email' => old('email', ''),
+            ],
+            'stories' => [
+                'has' => $heroStories->isNotEmpty(),
+                'ids' => $heroStories->pluck('id')->values(),
+                'ring_unseen' => story_ring_style($heroStories->count()),
+                'ring_seen' => story_ring_style($heroStories->count(), true),
+                'payload' => [
+                    'name' => $user->name,
+                    'avatar' => $user->profile_img,
+                    'isOwner' => (bool) $isOwner,
+                    'items' => $heroStories->map(fn ($st) => [
+                        'id' => $st->id,
+                        'type' => $st->media_type,
+                        'url' => $st->url(),
+                        'caption' => $st->caption,
+                    ])->values(),
+                ],
+            ],
+            'urls' => [
+                'followers' => route('profile.followers', $user->username),
+                'following' => route('profile.following', $user->username),
+                'follow_toggle' => route('follow.toggle', $user),
+                'messages_start' => route('messages.start'),
+                'public' => route('profile.public', $user->username),
+                'update' => route('profile.update'),
+                'email' => route('profile.email'),
+                'password' => route('profile.password'),
+                'privacy' => route('profile.privacy'),
+                'social' => route('profile.social'),
+                'destroy' => route('profile.destroy'),
+                'seller_create' => \Illuminate\Support\Facades\Route::has('seller.auctions.create') ? route('seller.auctions.create') : '#',
+                'browse' => route('browse.auctions'),
+                'login' => route('login'),
+            ],
+            'flash' => [
+                'profile_success' => session('profile_success'),
+                'email_success' => session('email_success'),
+                'password_success' => session('password_success'),
+                'status' => session('status'),
+                'error' => session('error'),
+            ],
+            'errors_flat' => $errorFlat,
+        ];
+
+        $config = [
+            'public_url' => route('profile.public', $user->username),
+            'drawer_open' => $psDrawerOpen ? '1' : '0',
+            'drawer_tab' => $psDrawerTab,
+            'drawer_inline' => $psDrawerInline,
+            'error_fields' => $errorFields,
+            'csrf' => csrf_token(),
+        ];
+
+        return \Inertia\Inertia::render('Profile/Show', ['pf' => $pf, 'config' => $config]);
     }
 
     private function buildActivities(User $user, bool $isOwner)
@@ -194,16 +359,6 @@ class ProfileController extends Controller
             ->where('username', strtolower($username))
             ->firstOrFail();
 
-        $auctions = $user->auctions()->latest()->get();
-
-        $isOwner = auth()->check() && auth()->id() === $user->id;
-        $isFollowing = auth()->check() ? auth()->user()->isFollowing($user->id) : false;
-        $followerCount = $user->followers()->count();
-        $followingCount = $user->followings()->count();
-        $activities = $this->buildActivities($user, $isOwner);
-
-        return view('profile.show', compact(
-            'user', 'auctions', 'isOwner', 'isFollowing', 'followerCount', 'followingCount', 'activities'
-        ));
+        return $this->renderProfile($user);
     }
 }
