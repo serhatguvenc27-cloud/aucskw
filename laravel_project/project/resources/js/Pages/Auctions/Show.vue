@@ -5,7 +5,7 @@ export default { layout: AppLayout };
 
 <script setup>
 import { onMounted, onUnmounted, nextTick } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     a: Object,
@@ -56,7 +56,7 @@ onUnmounted(() => {
             <div>
                 <div class="au-title">{{ a.title_70 }}</div>
                 <div class="au-breadcrumb">
-                    <a :href="route('index')">Ana Sayfa</a>
+                    <Link :href="route('index')">Ana Sayfa</Link>
                     <span class="sep">/</span>
                     <a href="#">Müzayedeler</a>
                     <span class="sep">/</span>
@@ -191,7 +191,7 @@ onUnmounted(() => {
                             </template>
                         </template>
                         <div v-else style="padding:12px 16px;border-top:1px solid var(--border);font-size:12px;">
-                            Sohbete katılmak için <a :href="config.login_url" style="color:var(--primary);">giriş yap</a>.
+                            Sohbete katılmak için <Link :href="config.login_url" style="color:var(--primary);">giriş yap</Link>.
                         </div>
                     </div>
                 </div>
@@ -288,9 +288,9 @@ onUnmounted(() => {
                                 <i class="bi bi-clock me-1"></i> Bu müzayede sona erdi.
                             </div>
                         </template>
-                        <a v-else :href="config.login_url" class="bid-submit" style="text-decoration:none;">
+                        <Link v-else :href="config.login_url" class="bid-submit" style="text-decoration:none;">
                             <i class="bi bi-box-arrow-in-right"></i> Teklif vermek için giriş yap
-                        </a>
+                        </Link>
                     </div>
                 </div>
 
@@ -300,11 +300,11 @@ onUnmounted(() => {
                         <div class="au-card-title"><i class="bi bi-shop"></i> Satıcı</div>
                     </div>
                     <div class="seller-card-body">
-                        <a :href="a.seller.profile_url" class="seller-ava-link">
+                        <Link :href="a.seller.profile_url" class="seller-ava-link">
                             <img class="seller-ava" :src="a.seller.profile_img" :alt="a.seller.name">
-                        </a>
+                        </Link>
                         <div class="seller-meta">
-                            <a :href="a.seller.profile_url" class="seller-name" data-testid="seller-name">{{ a.seller.name }}</a>
+                            <Link :href="a.seller.profile_url" class="seller-name" data-testid="seller-name">{{ a.seller.name }}</Link>
                             <div class="seller-handle">&#64;{{ a.seller.username }}</div>
                             <div class="seller-rating" data-testid="seller-rating">
                                 <span class="stars">
@@ -326,12 +326,12 @@ onUnmounted(() => {
                                 </button>
                             </form>
                         </template>
-                        <a v-else :href="config.login_url" class="seller-btn-primary" data-testid="message-seller-btn">
+                        <Link v-else :href="config.login_url" class="seller-btn-primary" data-testid="message-seller-btn">
                             <i class="bi bi-chat-dots"></i> Satıcıya Mesaj Gönder
-                        </a>
-                        <a :href="a.seller.profile_url" class="seller-btn-ghost">
+                        </Link>
+                        <Link :href="a.seller.profile_url" class="seller-btn-ghost">
                             <i class="bi bi-person"></i> Profili Gör
-                        </a>
+                        </Link>
                     </div>
                 </div>
 

@@ -42,7 +42,7 @@ function isAuth() {
 
     <div class="fl-root">
         <div class="fl-header">
-            <a :href="fl.urls.back" class="fl-back"><i class="bi bi-arrow-left"></i></a>
+            <Link :href="fl.urls.back" class="fl-back"><i class="bi bi-arrow-left"></i></Link>
             <div>
                 <div class="fl-header-name">{{ fl.user.name }}</div>
                 <div class="fl-header-sub">&#64;{{ fl.user.username }}</div>
@@ -50,20 +50,20 @@ function isAuth() {
         </div>
 
         <div class="fl-tabs">
-            <a :href="fl.urls.followers" class="fl-tab" :class="{ active: fl.type === 'followers' }">
+            <Link :href="fl.urls.followers" class="fl-tab" :class="{ active: fl.type === 'followers' }">
                 Takipçiler
                 <span class="fl-tab-count">{{ fl.follower_count }}</span>
-            </a>
-            <a :href="fl.urls.following" class="fl-tab" :class="{ active: fl.type === 'following' }">
+            </Link>
+            <Link :href="fl.urls.following" class="fl-tab" :class="{ active: fl.type === 'following' }">
                 Takip Edilenler
                 <span class="fl-tab-count">{{ fl.following_count }}</span>
-            </a>
+            </Link>
         </div>
 
         <div class="fl-list">
             <template v-if="fl.people.length">
                 <div v-for="(person, i) in fl.people" :key="i" class="fl-item">
-                    <a :href="person.profile_url" class="fl-item-left">
+                    <Link :href="person.profile_url" class="fl-item-left">
                         <div class="fl-avatar">
                             <img :src="person.avatar" :alt="person.name">
                         </div>
@@ -72,7 +72,7 @@ function isAuth() {
                             <div class="fl-handle">&#64;{{ person.username }}</div>
                             <div v-if="person.bio" class="fl-bio">{{ person.bio }}</div>
                         </div>
-                    </a>
+                    </Link>
 
                     <button v-if="isAuth() && !person.is_self"
                             class="fl-follow-btn" :class="{ following: state[i].following }"

@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue';
+import { Link } from '@inertiajs/vue3';
 import { useClock, formatCountdown } from '@/useClock';
 
 const props = defineProps({
@@ -19,7 +20,7 @@ function onImgLoad(e) {
 </script>
 
 <template>
-    <a :href="auction.show_url" class="idx-card">
+    <Link :href="auction.show_url" class="idx-card">
         <div class="idx-card-img">
             <img :src="auction.cover_url" :alt="auction.title" loading="eager" @load="onImgLoad" @error="onImgLoad">
             <div v-if="auction.is_active" class="idx-live-badge"><span class="dot"></span> CANLI</div>
@@ -44,5 +45,5 @@ function onImgLoad(e) {
                 </div>
             </div>
         </div>
-    </a>
+    </Link>
 </template>

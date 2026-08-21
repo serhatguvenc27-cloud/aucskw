@@ -5,7 +5,7 @@ export default { layout: AppLayout };
 
 <script setup>
 import { onMounted, nextTick } from 'vue';
-import { Head } from '@inertiajs/vue3';
+import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({
     pf: Object,
@@ -88,16 +88,16 @@ onMounted(boot);
                     <div class="pf-stat-label">TEKLİF</div>
                 </div>
                 <div class="pf-stat">
-                    <a :href="pf.urls.followers" class="pf-stat-link">
+                    <Link :href="pf.urls.followers" class="pf-stat-link">
                         <div class="pf-stat-num" id="follower-count">{{ pf.follower_count }}</div>
                         <div class="pf-stat-label">TAKİPÇİ</div>
-                    </a>
+                    </Link>
                 </div>
                 <div class="pf-stat">
-                    <a :href="pf.urls.following" class="pf-stat-link">
+                    <Link :href="pf.urls.following" class="pf-stat-link">
                         <div class="pf-stat-num">{{ pf.following_count }}</div>
                         <div class="pf-stat-label">TAKİP</div>
-                    </a>
+                    </Link>
                 </div>
                 <div class="pf-stat">
                     <div class="pf-stat-num">{{ pf.rating_fmt }}</div>
@@ -415,7 +415,7 @@ onMounted(boot);
             <!-- VİTRİN -->
             <div id="pc-vitrin">
                 <div v-if="pf.showcase.length" class="pf-grid">
-                    <a v-for="(a, ai) in pf.showcase" :key="ai" :href="a.url" class="pf-auction-card">
+                    <Link v-for="(a, ai) in pf.showcase" :key="ai" :href="a.url" class="pf-auction-card">
                         <div class="pf-card-img-wrap">
                             <img :src="a.cover" :alt="a.title">
                             <div class="pf-card-price">{{ a.price_fmt }}</div>
@@ -428,7 +428,7 @@ onMounted(boot);
                                 <span><i class="bi bi-eye me-1"></i>{{ a.view_count }}</span>
                             </div>
                         </div>
-                    </a>
+                    </Link>
                 </div>
                 <div v-else class="pf-empty">
                     <div class="pf-empty-icon"><i class="bi bi-box-seam"></i></div>
@@ -439,7 +439,7 @@ onMounted(boot);
                     </div>
                     <template v-if="pf.is_owner">
                         <a v-if="pf.is_creator_seller" :href="pf.urls.seller_create" class="pf-btn-save mt-3 d-inline-flex align-items-center gap-1"><i class="bi bi-plus-lg"></i> İlan Oluştur</a>
-                        <a v-else :href="pf.urls.browse" class="pf-btn-save mt-3 d-inline-flex align-items-center gap-1"><i class="bi bi-search"></i> Müzayedeleri Keşfet</a>
+                        <Link v-else :href="pf.urls.browse" class="pf-btn-save mt-3 d-inline-flex align-items-center gap-1"><i class="bi bi-search"></i> Müzayedeleri Keşfet</Link>
                     </template>
                 </div>
             </div>
@@ -507,7 +507,7 @@ onMounted(boot);
                     <div class="pf-empty-sub">Teklif verdiğinde veya bir açık artırma kazandığında burada görünecek.</div>
                 </div>
                 <div v-else class="pf-activity" data-testid="activity-list">
-                    <a v-for="(act, aci) in pf.activities" :key="aci" class="pf-act-item" :href="act.url || undefined">
+                    <component :is="act.url ? Link : 'div'" v-for="(act, aci) in pf.activities" :key="aci" class="pf-act-item" :href="act.url || undefined">
                         <span class="pf-act-icon" :style="`background:${act.color}22;color:${act.color};`"><i class="bi" :class="act.icon"></i></span>
                         <span class="pf-act-body">
                             <span class="pf-act-title">{{ act.title }}</span>
@@ -517,7 +517,7 @@ onMounted(boot);
                             <span class="pf-act-amount">{{ act.amount_fmt }}</span>
                             <span class="pf-act-date">{{ act.date }}</span>
                         </span>
-                    </a>
+                    </component>
                 </div>
             </div>
         </div>
